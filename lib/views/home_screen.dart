@@ -20,6 +20,7 @@ class _HomeScreenState extends State<HomeScreen> {
   ApiService apiService = ApiService();
   final Set<int> cartIds = {};
   String searchQuery = "";
+  String? selectedFuelType;
 
   @override
   void initState() {
@@ -33,7 +34,6 @@ class _HomeScreenState extends State<HomeScreen> {
         isLoading = true;
       });
       VehicleModel resData = await apiService.fetchVehicles();
-
       setState(() {
         allVehicles = resData.data ?? [];
       });
@@ -48,11 +48,25 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  List<String> get fuelTypes {
+    final types = allVehicles
+        .map((e) => e.specs?.fuelType ?? "")
+        .where((e) => e.isNotEmpty)
+        .toSet()
+        .toList();
+    types.sort();
+    return types;
+  }
+
   @override
   Widget build(BuildContext context) {
     final filteredItems = allVehicles.where((item) {
       final make = item.make ?? "";
-      return make.toLowerCase().contains(searchQuery.toLowerCase());
+      final matchesSearch =
+          make.toLowerCase().contains(searchQuery.toLowerCase());
+      final matchesFuel = selectedFuelType == null ||
+          (item.specs?.fuelType ?? "") == selectedFuelType;
+      return matchesSearch && matchesFuel;
     }).toList();
 
     return Scaffold(
@@ -79,9 +93,8 @@ class _HomeScreenState extends State<HomeScreen> {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context)=>CartScreen(
-                            items: allVehicles, cartIds: cartIds
-                          ),
+                          builder: (context) =>
+                              CartScreen(items: allVehicles, cartIds: cartIds),
                         ),
                       );
                     },
@@ -92,12 +105,10 @@ class _HomeScreenState extends State<HomeScreen> {
               SizedBox(height: 8),
               Text(
                 "Discover our latest vehicles.",
-                style: TextStyle(
-                  fontSize: 18,
-                  color: Colors.grey,
-                ),
+                style: TextStyle(fontSize: 18, color: Colors.grey),
               ),
               SizedBox(height: 14),
+
               Container(
                 decoration: BoxDecoration(
                   color: Color(0xfff5f5f5),
@@ -114,12 +125,13 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                   onChanged: (value) {
                     setState(() {
-                      searchQuery=value;
+                      searchQuery = value;
                     });
                   },
                 ),
               ),
               SizedBox(height: 16),
+
               Container(
                 width: double.infinity,
                 height: 100,
@@ -134,10 +146,102 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
               SizedBox(height: 16),
+
+              if (fuelTypes.isNotEmpty)
+                SizedBox(
+                  height: 40,
+                  child: ListView(
+                    scrollDirection: Axis.horizontal,
+                    children: [
+                      // "All" butonu
+                      Padding(
+                        padding: const EdgeInsets.only(right: 8.0),
+                        child: GestureDetector(
+                          onTap: () {
+                            setState(() {
+                              selectedFuelType = null;
+                            });
+                          },
+                          child: AnimatedContainer(
+                            duration: Duration(milliseconds: 200),
+                            padding: EdgeInsets.symmetric(horizontal: 16),
+                            decoration: BoxDecoration(
+                              color: selectedFuelType == null
+                                  ? Colors.black
+                                  : Color(0xfff5f5f5),
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Center(
+                              child: Text(
+                                "All",
+                                style: TextStyle(
+                                  color: selectedFuelType == null
+                                      ? Colors.white
+                                      : Colors.black54,
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 13,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+
+                      // Dinamik fuel type butonları
+                      ...fuelTypes.map((fuel) {
+                        final isSelected = selectedFuelType == fuel;
+                        return Padding(
+                          padding: const EdgeInsets.only(right: 8.0),
+                          child: GestureDetector(
+                            onTap: () {
+                              setState(() {
+                                selectedFuelType = isSelected ? null : fuel;
+                              });
+                            },
+                            child: AnimatedContainer(
+                              duration: Duration(milliseconds: 200),
+                              padding: EdgeInsets.symmetric(horizontal: 16),
+                              decoration: BoxDecoration(
+                                color: isSelected
+                                    ? Colors.black
+                                    : Color(0xfff5f5f5),
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: Center(
+                                child: Text(
+                                  fuel,
+                                  style: TextStyle(
+                                    color: isSelected
+                                        ? Colors.white
+                                        : Colors.black54,
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 13,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        );
+                      }).toList(),
+                    ],
+                  ),
+                ),
+
+              SizedBox(height: 16),
+
               if (isLoading)
                 Center(child: CircularProgressIndicator())
               else if (errorMessage != "")
                 Center(child: Text(errorMessage))
+              else if (filteredItems.isEmpty)
+                Expanded(
+                  child: Center(
+                    child: Text(
+                      "No vehicles found.",
+                      style: TextStyle(color: Colors.black38, fontSize: 16),
+                    ),
+                  ),
+                )
               else
                 Expanded(
                   child: GridView.builder(
@@ -150,17 +254,19 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                     itemBuilder: (context, index) {
                       final item = filteredItems[index];
-
                       return GestureDetector(
                         onTap: () {
-                          Navigator.push(context, 
-                          MaterialPageRoute(
-                            builder: (context)=>VehicleDetailScreen(
-                              item: item, cartIds: cartIds),
-                              ),
-                            );
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => VehicleDetailScreen(
+                                  item: item, cartIds: cartIds),
+                            ),
+                          );
                         },
-                        child: VehicleCard(item: item));},
+                        child: VehicleCard(item: item),
+                      );
+                    },
                   ),
                 ),
             ],
