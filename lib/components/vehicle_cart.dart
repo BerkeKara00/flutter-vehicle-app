@@ -105,6 +105,6 @@ class VehicleCard extends StatelessWidget {
                           ],
                         ),
                       );
-                    ;
+                    
   }
 }

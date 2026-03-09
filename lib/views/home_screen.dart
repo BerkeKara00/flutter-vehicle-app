@@ -19,6 +19,7 @@ class _HomeScreenState extends State<HomeScreen> {
   List<Data> allVehicles = [];
   ApiService apiService = ApiService();
   final Set<int> cartIds = {};
+  String searchQuery = "";
 
   @override
   void initState() {
@@ -49,6 +50,11 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final filteredItems = allVehicles.where((item) {
+      final make = item.make ?? "";
+      return make.toLowerCase().contains(searchQuery.toLowerCase());
+    }).toList();
+
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
@@ -106,6 +112,11 @@ class _HomeScreenState extends State<HomeScreen> {
                     prefixIcon: Icon(Icons.search, color: Colors.grey),
                     contentPadding: EdgeInsets.symmetric(vertical: 14),
                   ),
+                  onChanged: (value) {
+                    setState(() {
+                      searchQuery=value;
+                    });
+                  },
                 ),
               ),
               SizedBox(height: 16),
@@ -130,7 +141,7 @@ class _HomeScreenState extends State<HomeScreen> {
               else
                 Expanded(
                   child: GridView.builder(
-                    itemCount: allVehicles.length,
+                    itemCount: filteredItems.length,
                     gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                       crossAxisCount: 2,
                       crossAxisSpacing: 10,
@@ -138,7 +149,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       childAspectRatio: 0.7,
                     ),
                     itemBuilder: (context, index) {
-                      final item = allVehicles[index];
+                      final item = filteredItems[index];
 
                       return GestureDetector(
                         onTap: () {
