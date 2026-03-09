@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:vehicle_app/components/vehicle_cart.dart';
 import 'package:vehicle_app/model/vehicle_model.dart';
 import 'package:vehicle_app/services/api_service.dart';
+import 'package:vehicle_app/views/cart_screen.dart';
 import 'package:vehicle_app/views/vehicle_detail_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -68,7 +69,16 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ),
                   IconButton(
-                    onPressed: () {},
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context)=>CartScreen(
+                            items: allVehicles, cartIds: cartIds
+                          ),
+                        ),
+                      );
+                    },
                     icon: Icon(Icons.favorite_border_outlined),
                   )
                 ],
