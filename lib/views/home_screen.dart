@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:vehicle_app/model/vehicle_model.dart';
+import 'package:vehicle_app/services/api_service.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -9,6 +11,38 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
 TextEditingController searchController = TextEditingController();
+bool isLoading = false;
+String errorMessage = "";
+List<Data> allVehicles = [];
+ApiService apiService = ApiService();
+
+@override
+  void initState() {
+    loadVehicles();
+    super.initState();
+  }
+
+  Future<void> loadVehicles() async {
+    try {
+      setState(() {
+        isLoading = true;
+      });
+      VehicleModel resData = await apiService.fetchVehicles();
+
+      setState(() {
+        allVehicles = resData.data ?? [];
+      });
+
+    } catch (e) {
+      setState(() {
+        errorMessage = "Failed to load vehicles data.";
+      });
+    }finally{
+      setState(() {
+        isLoading=false;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
